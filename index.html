@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Money Finder</title>
+<meta name="description" content="A checklist of legitimate places to find money you're owed, with links to official sources.">
+<style>
+  :root {
+    --bg: #f7f6f2; --card: #ffffff; --text: #1d1d1b; --muted: #5f5e58;
+    --accent: #1f7a4d; --accent-soft: #e3f1e9; --border: #e2e0d8; --warn: #9a5b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151614; --card: #1f201d; --text: #ecebe6; --muted: #a3a29a;
+      --accent: #5cc48d; --accent-soft: #20352a; --border: #34352f; --warn: #e0a64a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 24px; }
+  .summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat { flex: 1 1 160px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; }
+  .stat b { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: .85rem; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    margin: 32px 0 10px; }
+  .item { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+  .item.done { background: var(--accent-soft); border-color: transparent; }
+  .item input[type=checkbox] { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--accent); grid-row: span 3; }
+  .item h3 { margin: 0; font-size: 1rem; }
+  .item p { margin: 0; color: var(--muted); font-size: .93rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: .9rem; margin-top: 4px; }
+  .row a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .row a:hover { text-decoration: underline; }
+  .row label { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .row input[type=number] { width: 100px; padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+  .note { border-left: 3px solid var(--warn); padding: 10px 14px; background: var(--card);
+    border-radius: 0 8px 8px 0; font-size: .92rem; margin-top: 32px; }
+  .note b { color: var(--warn); }
+  button { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px;
+    padding: 6px 12px; font: inherit; font-size: .85rem; cursor: pointer; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Free Money Finder</h1>
+  <p class="lede">These are legitimate places where money is often waiting for you. Every link goes to an official or well-known source. Check items off as you go, and log what you collect. Your progress is saved in this browser.</p>
+
+  <div class="summary">
+    <div class="stat"><b id="count">0 / 0</b><span>sources checked</span><div class="bar"><i id="bar"></i></div></div>
+    <div class="stat"><b id="total">$0</b><span>collected so far</span></div>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="note"><b>Scam rule:</b> Real unclaimed money never requires you to pay a fee, buy gift cards, or give your bank login. Government sites end in <code>.gov</code>. Claim directly, and skip any "finder" service that wants a cut.</div>
+
+  <button id="reset" type="button">Reset progress</button>
+</main>
+
+<script>
+const SECTIONS = [
+  { title: "Money you're already owed", items: [
+    { id: "unclaimed", name: "Unclaimed property (every state)",
+      desc: "Old paychecks, deposits, refunds, and forgotten accounts get turned over to the state. Search every state you've lived in, and search under family members' names too.",
+      links: [["MissingMoney.com", "https://www.missingmoney.com/"], ["NAUPA state list", "https://unclaimed.org/"]] },
+    { id: "irs", name: "Unclaimed federal tax refunds",
+      desc: "If you didn't file in a year you were owed a refund, you have 3 years to claim it. Check your refund status too.",
+      links: [["Where's My Refund", "https://www.irs.gov/refunds"], ["Unclaimed refunds", "https://www.irs.gov/newsroom/irs-unclaimed-refunds"]] },
+    { id: "treasury", name: "Matured savings bonds",
+      desc: "Paper savings bonds that stopped earning interest are often never cashed.",
+      links: [["Treasury Hunt", "https://www.treasurydirect.gov/savings-bonds/treasury-hunt/"]] },
+    { id: "fdic", name: "Failed bank deposits",
+      desc: "Money left in banks that failed can still be claimed.",
+      links: [["FDIC unclaimed funds", "https://www.fdic.gov/resources/resolutions/bank-failures/unclaimed-funds/"]] },
+    { id: "pension", name: "Lost pensions & 401(k)s",
+      desc: "Retirement accounts from old jobs are easy to lose track of.",
+      links: [["Retirement Savings Lost & Found", "https://lostandfound.dol.gov/"], ["PBGC pension search", "https://www.pbgc.gov/search-unclaimed-pensions"]] },
+    { id: "hud", name: "FHA mortgage insurance refunds",
+      desc: "If you had an FHA-insured mortgage, you may be owed a premium refund.",
+      links: [["HUD refund lookup", "https://entp.hud.gov/idapp/html/hicorlook.cfm"]] },
+  ]},
+  { title: "Settlements & credits", items: [
+    { id: "classaction", name: "Open class action settlements",
+      desc: "Many settlements pay without proof of purchase. Browse open ones and file for those that apply to you.",
+      links: [["ClassAction.org settlements", "https://www.classaction.org/settlements"], ["FTC refunds", "https://www.ftc.gov/enforcement/refunds"]] },
+    { id: "eitc", name: "Tax credits you might be missing",
+      desc: "The Earned Income Tax Credit and others are often unclaimed. Low and moderate income filers may also qualify for free filing.",
+      links: [["EITC assistant", "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/use-the-eitc-assistant"], ["IRS Free File", "https://www.irs.gov/filing/free-file-do-your-federal-taxes-for-free"]] },
+    { id: "benefits", name: "Government benefits check",
+      desc: "One questionnaire screens you for hundreds of federal programs.",
+      links: [["Benefits.gov finder", "https://www.usa.gov/benefit-finder"]] },
+  ]},
+  { title: "Low-effort extras", items: [
+    { id: "bankbonus", name: "Bank account sign-up bonuses",
+      desc: "Banks regularly pay a cash bonus for opening an account and setting up direct deposit. Read the terms for monthly fees and how long you must keep it open.",
+      links: [["Doctor of Credit bank bonuses", "https://www.doctorofcredit.com/best-bank-account-bonuses/"]] },
+    { id: "hysa", name: "Move idle savings to a high-yield account",
+      desc: "Many big banks pay close to 0% on savings. An FDIC-insured high-yield account pays you interest for doing nothing.",
+      links: [["FDIC BankFind (verify insurance)", "https://banks.data.fdic.gov/bankfind-suite/bankfind"]] },
+    { id: "match", name: "Full employer 401(k) match",
+      desc: "If your employer matches contributions and you aren't contributing enough to get the full match, you're leaving free money on the table. Check with HR.",
+      links: [] },
+    { id: "subs", name: "Cancel unused subscriptions",
+      desc: "Go through a few months of bank and card statements and cancel anything you don't use. Money not spent counts too.",
+      links: [] },
+    { id: "price", name: "Price-drop refunds & rebates",
+      desc: "Check recent big purchases for price-adjustment policies, and submit any manufacturer rebates you skipped.",
+      links: [] },
+  ]},
+];
+
+const KEY = "free-money-finder-v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+const list = document.getElementById("list");
+const all = SECTIONS.flatMap(s => s.items);
+
+function render() {
+  list.innerHTML = "";
+  for (const sec of SECTIONS) {
+    const h = document.createElement("h2"); h.textContent = sec.title; list.appendChild(h);
+    for (const it of sec.items) {
+      const s = state[it.id] || {};
+      const el = document.createElement("div");
+      el.className = "item" + (s.done ? " done" : "");
+      const links = it.links.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join("");
+      el.innerHTML = `
+        <input type="checkbox" ${s.done ? "checked" : ""} aria-label="Mark ${it.name} as checked">
+        <h3>${it.name}</h3>
+        <p>${it.desc}</p>
+        <div class="row">${links}
+          <label>Collected $<input type="number" min="0" step="0.01" value="${s.amount ?? ""}" placeholder="0"></label>
+        </div>`;
+      el.querySelector("input[type=checkbox]").addEventListener("change", e => {
+        state[it.id] = { ...state[it.id], done: e.target.checked }; save(); render();
+      });
+      el.querySelector("input[type=number]").addEventListener("input", e => {
+        const v = parseFloat(e.target.value);
+        state[it.id] = { ...state[it.id], amount: isNaN(v) ? null : v }; save(); updateSummary();
+      });
+      list.appendChild(el);
+    }
+  }
+  updateSummary();
+}
+
+function updateSummary() {
+  const done = all.filter(it => state[it.id]?.done).length;
+  const total = all.reduce((sum, it) => sum + (state[it.id]?.amount || 0), 0);
+  document.getElementById("count").textContent = `${done} / ${all.length}`;
+  document.getElementById("bar").style.width = `${(done / all.length) * 100}%`;
+  document.getElementById("total").textContent =
+    total.toLocaleString(undefined, { style: "currency", currency: "USD" });
+}
+
+document.getElementById("reset").addEventListener("click", () => {
+  if (confirm("Clear all progress?")) { state = {}; save(); render(); }
+});
+
+render();
+</script>
+</body>
+</html>
